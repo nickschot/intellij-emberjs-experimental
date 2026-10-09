@@ -28,10 +28,12 @@ class EmberServiceGotoDeclarationHandler : GotoDeclarationHandler {
         val serviceName = injectedServiceName(field) ?: return null
         val context = field.containingFile?.originalFile?.virtualFile
         val indexed = EmberNameIndex.getFilteredFiles(ProjectScope.getAllScope(project)) { it.type == "service" && it.name == serviceName }
-        val files = EmberNavigationTargets.preferResolvedByApp(context, indexed)
-                .ifEmpty { EmberNavigationTargets.builtinService(context, serviceName) }
         val psiManager = PsiManager.getInstance(project)
-        return files.mapNotNull { psiManager.findFile(it) }.takeIf { it.isNotEmpty() }?.toTypedArray()
+        // A service file can be a re-export (e.g. ember-data's app/services/store.js); go to the actual definition.
+        val files = EmberNavigationTargets.preferResolvedByApp(context, indexed).mapNotNull { psiManager.findFile(it) }
+                .map { EmberNavigationTargets.defaultExportDefinition(it) ?: it }
+        val targets = files.ifEmpty { listOfNotNull(EmberNavigationTargets.registeredService(project, serviceName)) }
+        return targets.takeIf { it.isNotEmpty() }?.toTypedArray()
     }
 
     companion object {
