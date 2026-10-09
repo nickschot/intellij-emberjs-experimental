@@ -48,7 +48,8 @@ jobs:
     name: Update Changelog, Create Tag and Release
     runs-on: ubuntu-latest
     needs: test
-    if: github.ref == 'refs/heads/main'
+    # Only release from the upstream repository; forks must not tag, release or publish to the Marketplace.
+    if: github.repository == 'patricklx/intellij-emberjs-experimental' && github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
