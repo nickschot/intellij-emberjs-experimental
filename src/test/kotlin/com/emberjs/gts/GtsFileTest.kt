@@ -4,11 +4,13 @@ import com.emberjs.gts.GjsFileType
 import com.emberjs.gts.GtsFileType
 import com.intellij.codeInsight.daemon.impl.HighlightInfo
 import com.intellij.lang.javascript.BasicDialectDetector
+import com.intellij.lang.javascript.JavaScriptFileType
 import com.intellij.lang.javascript.JavaScriptSupportLoader
 import com.intellij.lang.javascript.inspections.ES6UnusedImportsInspection
 import com.intellij.lang.javascript.inspections.JSLastCommaInObjectLiteralInspection
 import com.intellij.lang.javascript.inspections.JSUnusedGlobalSymbolsInspection
 import com.intellij.lang.javascript.inspections.JSUnusedLocalSymbolsInspection
+import com.intellij.lang.javascript.TypeScriptFileType
 import com.intellij.lang.javascript.psi.impl.JSFileImpl
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.testFramework.fixtures.impl.CodeInsightTestFixtureImpl
@@ -146,5 +148,14 @@ class GtsFileTest : BasePlatformTestCase() {
         System.out.println(highlighting)
         val noCommaAllowed = highlighting.filter { it.description?.contains("comma") == true }
         TestCase.assertEquals(noCommaAllowed.toString(), 0, noCommaAllowed.size)
+    }
+
+    @Test
+    fun testFileTypesAreNotEqualToJsAndTs() {
+        // The platform looks up the indices for a file type in an open-addressing map that only calls equals(),
+        // so a Gjs/Gts file type claiming to equal JavaScript/TypeScript picked up their indices on some runs
+        // ("JSFilterLexer.start was not called").
+        TestCase.assertFalse(GjsFileType.INSTANCE.equals(JavaScriptFileType))
+        TestCase.assertFalse(GtsFileType.INSTANCE.equals(TypeScriptFileType))
     }
 }
