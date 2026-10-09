@@ -1,6 +1,24 @@
 # Changelog
 
 
+## v2026.2.1 (2026-10-09)
+
+#### What's Changed
+* Fix crashes on WebStorm/IntelliJ 2026.2 by @nickschot in https://github.com/nickschot/intellij-emberjs-experimental/pull/1
+* Migrate Glint to the LSP client API and replace APIs scheduled for removal by @nickschot in https://github.com/nickschot/intellij-emberjs-experimental/pull/2
+* Cmd+click on injected services goes straight to the service by @nickschot in https://github.com/nickschot/intellij-emberjs-experimental/pull/4
+* Fix addon re-exports resolving to themselves ("1 != 2") by @nickschot in https://github.com/nickschot/intellij-emberjs-experimental/pull/5
+* Don't run the release job on forks by @nickschot in https://github.com/nickschot/intellij-emberjs-experimental/pull/6
+* Resolve `@controller` and `@model` in route templates by @nickschot in https://github.com/nickschot/intellij-emberjs-experimental/pull/7
+* Find built-in services through Ember's service registry types by @nickschot in https://github.com/nickschot/intellij-emberjs-experimental/pull/8
+* Own plugin ID and a manual release flow with a plugin repository by @nickschot in https://github.com/nickschot/intellij-emberjs-experimental/pull/9
+
+#### New Contributors
+* @nickschot made their first contribution in https://github.com/nickschot/intellij-emberjs-experimental/pull/1
+
+**Full Changelog**: https://github.com/nickschot/intellij-emberjs-experimental/commits/v2026.2.1
+
+
 ## v2026.1.1 (2026-09-15)
 
 #### :bug: Bug Fix
