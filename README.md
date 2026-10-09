@@ -39,26 +39,45 @@ Basic:
 Installation
 -------------------------------------------------------------------------------
 
-This plugin is published on the
-[JetBrains Plugin Repository](https://plugins.jetbrains.com/plugin/15499-ember-experimental-js): 
+This is a fork of [EmberExperimental.js](https://github.com/patricklx/intellij-emberjs-experimental), published as
+**EmberExperimental.js (nickschot fork)** under its own plugin ID (`com.emberjs.experimental.nickschot`). It can't be
+enabled together with the original plugin, so uninstall that one first.
 
-    Preferences... → Plugins → Browse Repositories ... → Search for "Ember.js"
+Releases are published as a custom plugin repository, so the IDE installs and updates the plugin like any other:
+
+1. Settings → Plugins → ⚙ → **Manage Plugin Repositories...** → add
+
+       https://github.com/nickschot/intellij-emberjs-experimental/releases/latest/download/updatePlugins.xml
+
+2. Search the **Marketplace** tab for "EmberExperimental.js (nickschot fork)" and install it.
+
+Each release's zip is also attached to its [GitHub release](https://github.com/nickschot/intellij-emberjs-experimental/releases)
+for installing via Settings → Plugins → ⚙ → **Install Plugin from Disk...**.
 
 
 ### From Source
 
 Clone this repository:
 
-    git clone https://github.com/patricklx/intellij-emberjs-experimental.git
+    git clone https://github.com/nickschot/intellij-emberjs-experimental.git
     cd intellij-emberjs-experimental
 
 Build a plugin zip file:
 
     ./gradlew buildPlugin
 
-Install the plugin from `/build/distributions/Ember.js.zip`:
+Install the plugin from `build/distributions/intellij-emberjs-experimental-<version>.zip`:
 
-    Preferences... → Plugins → Install plugin from disk ...
+    Settings → Plugins → ⚙ → Install Plugin from Disk...
+
+
+Releasing
+-------------------------------------------------------------------------------
+
+Run the **Release** workflow from the Actions tab on `main`. It bumps the version in `build.gradle.kts` (patch or
+minor, or an exact version you enter), runs the tests and the Plugin Verifier, builds the plugin, commits and tags
+`v<version>`, and publishes a GitHub release with the plugin zip and the `updatePlugins.xml` the plugin repository
+URL above points at.
 
 
 Development
