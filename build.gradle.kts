@@ -56,7 +56,7 @@ java {
 // Read more: https://github.com/JetBrains/gradle-intellij-plugin
 intellijPlatform {
     pluginConfiguration {
-        name.set("EmberExperimental.js")
+        name.set("EmberExperimental.js (nickschot fork)")
         ideaVersion {
             // The JavaScript plugin APIs we extend (BaseLspTypeScriptService, ESLint, LSP impl) are internal and
             // change incompatibly between releases - even between 262 patch releases (2026.2 -> 2026.2.3 turned

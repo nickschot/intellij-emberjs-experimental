@@ -1,0 +1,136 @@
+name: Release
+
+# Manually triggered from the Actions tab: bumps the version, adds the release notes to CHANGELOG.md and the plugin's
+# change notes, tests and builds the plugin, tags the release and publishes it as a GitHub release together with an
+# updatePlugins.xml. That file makes the releases a custom plugin
+# repository: add
+#   https://github.com/<owner>/<repo>/releases/latest/download/updatePlugins.xml
+# under Settings | Plugins | ⚙ | Manage Plugin Repositories to install the plugin and get updates.
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version part to bump (ignored when a version is given below)
+        type: choice
+        options: [patch, minor]
+        default: patch
+      version:
+        description: Exact version to release instead, e.g. 2026.3.0
+        type: string
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          submodules: true
+          fetch-depth: 0 # tags, to find the previous release
+
+      - uses: actions/setup-java@v6.0.1
+        with:
+          java-version: '17'
+          distribution: 'zulu'
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.gradle/caches
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Determine version
+        id: version
+        env:
+          BUMP: ${{ inputs.bump }}
+          EXPLICIT_VERSION: ${{ inputs.version }}
+        run: |
+          current=$(sed -nE 's/^version = "([^"]+)"$/\1/p' build.gradle.kts)
+          if [ -n "$EXPLICIT_VERSION" ]; then
+            next="$EXPLICIT_VERSION"
+          else
+            IFS=. read -r major minor patch <<< "$current"
+            case "$BUMP" in
+              minor) next="$major.$((minor + 1)).0" ;;
+              *)     next="$major.$minor.$((patch + 1))" ;;
+            esac
+          fi
+          if ! [[ "$next" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid version '$next' (expected e.g. 2026.2.1)"; exit 1
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/v$next" > /dev/null; then
+            echo "::error::Tag v$next already exists"; exit 1
+          fi
+          echo "Releasing $next (was $current)"
+          echo "version=$next" >> "$GITHUB_OUTPUT"
+
+      - name: Generate release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # GitHub's generated notes: the pull requests merged since the previous release tag
+          args=(-f tag_name="v$VERSION" -f target_commitish="$GITHUB_SHA")
+          previous=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)
+          if [ -n "$previous" ]; then args+=(-f previous_tag_name="$previous"); fi
+          gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" "${args[@]}" --jq .body > release-notes.md
+          python3 .github/scripts/release-notes.py normalize release-notes.md
+          cat release-notes.md
+
+      - name: Set version and update CHANGELOG.md
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          sed -i -E "s/^version = \"[^\"]+\"$/version = \"$VERSION\"/" build.gradle.kts
+          python3 .github/scripts/release-notes.py changelog CHANGELOG.md "$VERSION" "$(date -u +%F)" release-notes.md
+
+      - name: Test and verify
+        run: |
+          chmod +x ./gradlew
+          ./gradlew check verifyPlugin
+
+      - name: Build
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.version }}
+        run: |
+          # the release notes as the plugin's change notes, shown in the IDE's update dialog (not committed)
+          python3 .github/scripts/release-notes.py change-notes src/main/resources/META-INF/plugin.xml release-notes.md "$RELEASE_URL"
+          ./gradlew buildPlugin
+          git checkout -- src/main/resources/META-INF/plugin.xml
+          ls build/distributions
+
+      - name: Commit and tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Release $VERSION" build.gradle.kts CHANGELOG.md
+          git tag "v$VERSION"
+          git push origin HEAD:main "v$VERSION"
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          DOWNLOAD_BASE: ${{ github.server_url }}/${{ github.repository }}/releases/download/v${{ steps.version.outputs.version }}
+        run: |
+          zip=$(ls build/distributions/*-"$VERSION".zip)
+          python3 .github/scripts/update-plugins-xml.py "$zip" "$DOWNLOAD_BASE/$(basename "$zip")" > updatePlugins.xml
+          cat updatePlugins.xml
+          gh release create "v$VERSION" "$zip" updatePlugins.xml \
+            --title "v$VERSION" \
+            --notes-file release-notes.md \
+            --latest
