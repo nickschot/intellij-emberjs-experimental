@@ -79,6 +79,10 @@ minor, or an exact version you enter), runs the tests and the Plugin Verifier, b
 `v<version>`, and publishes a GitHub release with the plugin zip and the `updatePlugins.xml` the plugin repository
 URL above points at.
 
+The release notes are GitHub's generated notes (the pull requests merged since the previous release). They are
+prepended to [CHANGELOG.md](CHANGELOG.md) in the release commit, used as the plugin's change notes (shown in the
+IDE's update dialog) and as the GitHub release description.
+
 
 Development
 -------------------------------------------------------------------------------

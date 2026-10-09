@@ -1,7 +1,8 @@
 name: Release
 
-# Manually triggered from the Actions tab: bumps the version, tests and builds the plugin, tags the release and
-# publishes it as a GitHub release together with an updatePlugins.xml. That file makes the releases a custom plugin
+# Manually triggered from the Actions tab: bumps the version, adds the release notes to CHANGELOG.md and the plugin's
+# change notes, tests and builds the plugin, tags the release and publishes it as a GitHub release together with an
+# updatePlugins.xml. That file makes the releases a custom plugin
 # repository: add
 #   https://github.com/<owner>/<repo>/releases/latest/download/updatePlugins.xml
 # under Settings | Plugins | ⚙ | Manage Plugin Repositories to install the plugin and get updates.
@@ -35,6 +36,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           submodules: true
+          fetch-depth: 0 # tags, to find the previous release
 
       - uses: actions/setup-java@v6.0.1
         with:
@@ -73,10 +75,25 @@ jobs:
           echo "Releasing $next (was $current)"
           echo "version=$next" >> "$GITHUB_OUTPUT"
 
-      - name: Set version
+      - name: Generate release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # GitHub's generated notes: the pull requests merged since the previous release tag
+          args=(-f tag_name="v$VERSION" -f target_commitish="$GITHUB_SHA")
+          previous=$(git describe --tags --abbrev=0 --match 'v*' 2>/dev/null || true)
+          if [ -n "$previous" ]; then args+=(-f previous_tag_name="$previous"); fi
+          gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" "${args[@]}" --jq .body > release-notes.md
+          python3 .github/scripts/release-notes.py normalize release-notes.md
+          cat release-notes.md
+
+      - name: Set version and update CHANGELOG.md
         env:
           VERSION: ${{ steps.version.outputs.version }}
-        run: sed -i -E "s/^version = \"[^\"]+\"$/version = \"$VERSION\"/" build.gradle.kts
+        run: |
+          sed -i -E "s/^version = \"[^\"]+\"$/version = \"$VERSION\"/" build.gradle.kts
+          python3 .github/scripts/release-notes.py changelog CHANGELOG.md "$VERSION" "$(date -u +%F)" release-notes.md
 
       - name: Test and verify
         run: |
@@ -88,8 +105,8 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           RELEASE_URL: ${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ steps.version.outputs.version }}
         run: |
-          # point the plugin's change notes at the release (not committed)
-          sed -i "s|CHANGELOG_PLACEHOLDER|See the <a href=\"$RELEASE_URL\">release notes for $VERSION</a>.|" src/main/resources/META-INF/plugin.xml
+          # the release notes as the plugin's change notes, shown in the IDE's update dialog (not committed)
+          python3 .github/scripts/release-notes.py change-notes src/main/resources/META-INF/plugin.xml release-notes.md "$RELEASE_URL"
           ./gradlew buildPlugin
           git checkout -- src/main/resources/META-INF/plugin.xml
           ls build/distributions
@@ -100,7 +117,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Release $VERSION" build.gradle.kts
+          git commit -m "Release $VERSION" build.gradle.kts CHANGELOG.md
           git tag "v$VERSION"
           git push origin HEAD:main "v$VERSION"
 
@@ -115,5 +132,5 @@ jobs:
           cat updatePlugins.xml
           gh release create "v$VERSION" "$zip" updatePlugins.xml \
             --title "v$VERSION" \
-            --generate-notes \
+            --notes-file release-notes.md \
             --latest
