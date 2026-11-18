@@ -14,6 +14,14 @@ class EmberNameIndexTest : BasePlatformTestCase() {
         super.setUp()
         project.getService(ProjectService::class.java)
     }
+
+    override fun tearDown() {
+        try {
+            clearVirtualCache()
+        } finally {
+            super.tearDown()
+        }
+    }
     override fun getTestDataPath(): String? {
         val resource = ClassLoader.getSystemResource("com/emberjs/index/fixtures")
         return Paths.get(resource.toURI()).toAbsolutePath().toString()

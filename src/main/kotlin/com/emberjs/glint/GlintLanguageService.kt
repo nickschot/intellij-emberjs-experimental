@@ -241,7 +241,10 @@ class GlintAnnotationError(val diagFixes: DiagnosticAndQuickFixes, private val p
 
     override fun getAbsoluteFilePath(): String? = path
 
-    override fun getDescription(): String = diagnostic.message + " (${diagnostic.source}${diagCode?.let { ":${it}" } ?: ""})"
+    // Since 2026.3 (LSP 3.18) a diagnostic message can be plain text or markup.
+    private val message: String = diagnostic.message?.map({ it }, { it.value }) ?: ""
+
+    override fun getDescription(): String = message + " (${diagnostic.source}${diagCode?.let { ":${it}" } ?: ""})"
 
     override fun getCategory() = when (diagnostic.severity) {
         DiagnosticSeverity.Error -> ERROR_CATEGORY
