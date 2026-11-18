@@ -808,15 +808,17 @@ class SimpleAstNode: ASTNode {
     }
 
     override fun getStartOffset(): Int {
-        TODO("Not yet implemented")
+        return 0
     }
 
     override fun getTextLength(): Int {
         return 0
     }
 
-    override fun getTextRange(): TextRange? {
-        TODO("Not yet implemented")
+    // Since 2026.3 the AbstractBlock constructor reads the node's text range eagerly.
+    // JsBlockWrapper overrides getTextRange(), so this value is never used.
+    override fun getTextRange(): TextRange {
+        return TextRange.EMPTY_RANGE
     }
 
     override fun getTreeParent(): ASTNode? {
