@@ -1,6 +1,15 @@
 # Changelog
 
 
+## v2026.3.0 (2026-11-18)
+
+#### What's Changed
+* Support WebStorm/IDEA 2026.3 by @nickschot in https://github.com/nickschot/intellij-emberjs-experimental/pull/10
+
+
+**Full Changelog**: https://github.com/nickschot/intellij-emberjs-experimental/compare/v2026.2.1...v2026.3.0
+
+
 ## v2026.2.1 (2026-10-09)
 
 #### What's Changed
