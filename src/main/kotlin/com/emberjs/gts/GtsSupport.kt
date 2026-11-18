@@ -453,12 +453,28 @@ class GtsFileViewProvider(manager: PsiManager, virtualFile: VirtualFile, eventSy
             this.languages.forEach {
                 element = super.findElementAt(offset, it)
                 if (element !is OuterLanguageElement) {
+                    if (it != baseLang && isCalledFromCollectHighlightsUtil()) {
+                        return super.findElementAt(offset, language)
+                    }
                     return element
                 }
             }
         }
         element = super.findElementAt(offset, language)
         return element
+    }
+
+    // CollectHighlightsUtil (used by the JS resolve prefetch pass since 2026.3) looks up both ends of a range
+    // and takes their common parent, so both must come from the root's own tree. Elements from different
+    // trees only share the directory as parent, which trips an assertion.
+    private fun isCalledFromCollectHighlightsUtil(): Boolean {
+        return StackWalker.getInstance().walk { frames ->
+            frames.limit(5).anyMatch { it.className == COLLECT_HIGHLIGHTS_UTIL }
+        }
+    }
+
+    companion object {
+        private const val COLLECT_HIGHLIGHTS_UTIL = "com.intellij.codeInsight.daemon.impl.CollectHighlightsUtil"
     }
 
     override fun findElementAt(offset: Int): PsiElement? {
