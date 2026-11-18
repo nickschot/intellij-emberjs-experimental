@@ -42,13 +42,13 @@ dependencies {
     intellijPlatform {
         // com.dmarcotte.handlebars is bundled in WebStorm but a marketplace plugin in IntelliJ IDEA Ultimate.
         // The main platform is IntelliJ IDEA Ultimate (compilation + tests). runIde uses IDEA Ultimate by default.
-        plugins(listOf("com.dmarcotte.handlebars:262.8665.173"))
-        bundledPlugins(listOf("JavaScript", "com.intellij.css", "org.jetbrains.plugins.yaml", "com.intellij.modules.json", "intellij.javascript.eslint"))
+        plugins(listOf("com.dmarcotte.handlebars:263.7307.101"))
+        bundledPlugins(listOf("JavaScript", "com.intellij.css", "com.intellij.xml", "org.jetbrains.plugins.yaml", "com.intellij.modules.json", "intellij.javascript.eslint"))
         bundledModules(listOf("intellij.platform.lsp.impl", "intellij.platform.structureView", "intellij.xml.structureView", "intellij.xml.structureView.impl", "intellij.platform.smRunner", "intellij.platform.testRunner"))
         pluginVerifier()
         zipSigner()
         testFramework(TestFrameworkType.Platform)
-        create(IntelliJPlatformType.IntellijIdeaUltimate, "2026.2.3")
+        create(IntelliJPlatformType.IntellijIdeaUltimate, "2026.3")
     }
 }
 
@@ -69,8 +69,8 @@ intellijPlatform {
             // change incompatibly between releases - even between 262 patch releases (2026.2 -> 2026.2.3 turned
             // TypeScriptService.getSignatureHelp into a suspend function). Only claim compatibility with the
             // builds we compile and verify against, so a new IDE release can't silently load a broken build.
-            sinceBuild.set("262.10968")
-            untilBuild.set("262.*")
+            sinceBuild.set("263.7307")
+            untilBuild.set("263.*")
         }
     }
 
@@ -82,8 +82,8 @@ intellijPlatform {
         // Internal API usage is inherent to the Glint/ESLint integrations, so only fail on real binary problems.
         failureLevel.set(listOf(VerifyPluginTask.FailureLevel.COMPATIBILITY_PROBLEMS, VerifyPluginTask.FailureLevel.INVALID_PLUGIN))
         ides {
-            create(IntelliJPlatformType.WebStorm, "2026.2.3")
-            create(IntelliJPlatformType.IntellijIdeaUltimate, "2026.2.3")
+            create(IntelliJPlatformType.WebStorm, "2026.3")
+            create(IntelliJPlatformType.IntellijIdeaUltimate, "2026.3")
         }
     }
 
@@ -120,7 +120,7 @@ intellijPlatformTesting.runIde.register("runIdeWS") {
     // Launch the plugin sandbox in WebStorm.
     // Usage: ./gradlew runIdeWS
     type = IntelliJPlatformType.WebStorm
-    version = "2026.2.3"
+    version = "2026.3"
 }
 
 gradle.taskGraph.whenReady {
